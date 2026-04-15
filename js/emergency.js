@@ -1,6 +1,7 @@
 /**
  * VenueIQ — Emergency Module
- * Incident management, evacuation map, and mass communication.
+ * Incident management, evacuation map, mass communication,
+ * and Firebase Realtime Database emergency reporting.
  * @module emergency
  */
 
@@ -211,7 +212,24 @@ window.VenueIQ.Emergency = (() => {
       'CRITICAL ALERT: Full venue evacuation has been initiated. All attendees must proceed to nearest exit immediately.',
       'assertive'
     );
+    // GA4
     typeof gtag !== 'undefined' && gtag('event', 'evacuation_triggered', { venue: 'MetroArena' });
+    // Firebase Analytics + Realtime Database
+    window.VenueIQ.FirebaseService?.logEvent('evacuation_triggered', {
+      venue: 'MetroArena Stadium',
+      zone: 'all',
+      severity: 'critical',
+    });
+    window.VenueIQ.FirebaseService?.reportEmergency?.({
+      type: 'evacuation',
+      zone: 'all',
+      description: 'Full venue evacuation initiated by operator.',
+    });
+    window.VenueIQ.FirebaseService?.pushAlert?.({
+      title: 'EVACUATION ACTIVATED',
+      message: 'Full venue evacuation initiated. All zones.',
+      severity: 'critical',
+    });
   };
 
   return Object.freeze({ init, refresh });

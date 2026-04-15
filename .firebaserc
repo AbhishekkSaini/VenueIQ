@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "venueiq-platform",
+    "production": "venueiq-platform",
+    "staging": "venueiq-platform-staging"
+  },
+  "targets": {
+    "venueiq-platform": {
+      "hosting": {
+        "venueiq": ["venueiq-platform"]
+      }
+    }
+  }
+}

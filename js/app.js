@@ -842,6 +842,16 @@
         });
       }, 600);
 
+      // Initialize Firebase (Realtime DB, Auth, Analytics, Perf, Remote Config, FCM)
+      window.VenueIQ.FirebaseService?.init?.().then(() => {
+        // Log successful app launch to Firebase Analytics
+        window.VenueIQ.FirebaseService?.logEvent('venueiq_launched', {
+          version: '2.4.1',
+          venue: 'MetroArena Stadium',
+          view: window.location.hash.replace('#', '') || 'dashboard',
+        });
+      });
+
       console.info('[VenueIQ] Application initialized successfully. v2.4.1');
 
     } catch (error) {

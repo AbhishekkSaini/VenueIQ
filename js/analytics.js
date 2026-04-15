@@ -1,6 +1,8 @@
 /**
  * VenueIQ — Analytics Module
- * Google Analytics GA4 integration + internal performance dashboards.
+ * Google Analytics GA4 + Firebase Analytics dual integration.
+ * Provides attendance charts, wait-time distribution, revenue breakdowns,
+ * AI insights, and live Firebase-powered metrics.
  * @module analytics
  */
 
@@ -138,7 +140,18 @@ window.VenueIQ.Analytics = (() => {
       }, ['Act on this →']);
       actBtn.addEventListener('click', () => {
         window.VenueIQ.showToast?.({ title: 'Action Queued', message: `${insight.title} — action logged.`, type: 'info' });
+        // GA4 event
         typeof gtag !== 'undefined' && gtag('event', 'ai_insight_action', { insight: insight.title });
+        // Firebase Analytics event
+        window.VenueIQ.FirebaseService?.logEvent('ai_insight_actioned', {
+          insight_title: insight.title,
+          positive: insight.positive,
+        });
+        // Write to Firebase Realtime DB
+        window.VenueIQ.FirebaseService?.writeDB?.(`venues/metroarena/ai_actions/${Date.now()}`, {
+          insight: insight.title,
+          actioned: true,
+        });
       });
       content.append(title, desc, impact, actBtn);
       item.append(icon, content);
@@ -185,6 +198,7 @@ window.VenueIQ.Analytics = (() => {
         duration: 2000,
       });
       typeof gtag !== 'undefined' && gtag('event', 'analytics_date_change', { range: e.target.value });
+      window.VenueIQ.FirebaseService?.logEvent('analytics_date_changed', { range: e.target.value });
     });
 
     $('#download-analytics')?.addEventListener('click', () => {
@@ -212,6 +226,14 @@ window.VenueIQ.Analytics = (() => {
       URL.revokeObjectURL(url);
       window.VenueIQ.showToast?.({ title: 'Downloaded', message: 'Analytics report saved as CSV.', type: 'success' });
       typeof gtag !== 'undefined' && gtag('event', 'analytics_downloaded');
+      window.VenueIQ.FirebaseService?.logEvent('analytics_csv_exported', {
+        row_count: csv.split('\n').length,
+        venue: 'metroarena',
+      });
+      window.VenueIQ.FirebaseService?.writeDB?.('venues/metroarena/exports', {
+        type: 'analytics_csv',
+        exportedBy: window.VenueIQ.FirebaseService?.getUserId?.() || 'anonymous',
+      });
     });
   };
 

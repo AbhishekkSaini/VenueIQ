@@ -194,7 +194,18 @@ window.VenueIQ.QueueManager = (() => {
         duration: 5000,
       });
       window.VenueIQ.announceToScreenReader?.('AI queue optimization complete. Average wait time reduced.');
+      // GA4
       typeof gtag !== 'undefined' && gtag('event', 'ai_optimize_queues');
+      // Firebase Analytics
+      window.VenueIQ.FirebaseService?.logEvent('ai_queue_optimized', {
+        queues_count: queues.length,
+        avg_wait_before: Math.round(queues.reduce((s, q) => s + q.waitMin / 0.75, 0) / queues.length),
+        avg_wait_after:  Math.round(queues.reduce((s, q) => s + q.waitMin, 0) / queues.length),
+      });
+      // Sync all queue data to Firebase Realtime DB
+      queues.forEach(q => {
+        window.VenueIQ.FirebaseService?.updateQueueData?.(q.id, q.waitMin, q.status);
+      });
     }, 1800);
   };
 
