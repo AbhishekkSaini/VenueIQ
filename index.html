@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+  <!-- SEO -->
+  <title>VenueIQ — Smart Physical Event Platform for Sporting Venues</title>
+  <meta name="description" content="VenueIQ transforms large-scale sporting venues with AI-powered crowd flow, real-time queue management, smart navigation, and emergency coordination for a seamless attendee experience." />
+  <meta name="keywords" content="sporting venue, crowd management, event technology, queue management, real-time coordination, stadium experience" />
+  <meta name="author" content="VenueIQ Technologies" />
+  <meta name="robots" content="index, follow" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="VenueIQ — Smart Physical Event Platform" />
+  <meta property="og:description" content="AI-powered crowd flow, real-time queue management, and seamless event coordination for large-scale sporting venues." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="./assets/og-image.png" />
+
+  <!-- Security: Content Security Policy -->
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self';
+             script-src 'self' 'nonce-viq2026' https://maps.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com https://fonts.googleapis.com;
+             style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+             font-src 'self' https://fonts.gstatic.com;
+             img-src 'self' data: https://maps.googleapis.com https://maps.gstatic.com https://*.googleapis.com blob:;
+             connect-src 'self' https://www.google-analytics.com https://maps.googleapis.com;
+             frame-src 'none';
+             worker-src 'self' blob:;
+             manifest-src 'self';" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+  <meta http-equiv="Permissions-Policy" content="geolocation=(self), camera=(), microphone=()" />
+
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#0a0e1a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <!-- Preconnect for performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://maps.googleapis.com" />
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="./css/design-tokens.css" />
+  <link rel="stylesheet" href="./css/main.css" />
+  <link rel="stylesheet" href="./css/components.css" />
+  <link rel="stylesheet" href="./css/animations.css" />
+  <link rel="stylesheet" href="./css/accessibility.css" />
+
+  <!-- Skip Navigation for Accessibility -->
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+</head>
+<body class="theme-dark" data-page="dashboard">
+
+  <!-- Accessibility: Live Region for Screen Readers -->
+  <div id="aria-live-polite" aria-live="polite" aria-atomic="true" class="sr-only" role="status"></div>
+  <div id="aria-live-assertive" aria-live="assertive" aria-atomic="true" class="sr-only" role="alert"></div>
+
+  <!-- Loading Screen -->
+  <div id="loading-screen" class="loading-screen" role="progressbar" aria-label="Loading VenueIQ Platform" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+    <div class="loading-logo">
+      <div class="loading-icon" aria-hidden="true">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M24 4L44 14V34L24 44L4 34V14L24 4Z" stroke="url(#grad1)" stroke-width="2" fill="none"/>
+          <path d="M24 12L36 18V30L24 36L12 30V18L24 12Z" fill="url(#grad2)" opacity="0.3"/>
+          <circle cx="24" cy="24" r="6" fill="url(#grad1)"/>
+          <defs>
+            <linearGradient id="grad1" x1="4" y1="4" x2="44" y2="44">
+              <stop offset="0%" stop-color="#6C63FF"/>
+              <stop offset="100%" stop-color="#00D4AA"/>
+            </linearGradient>
+            <linearGradient id="grad2" x1="4" y1="4" x2="44" y2="44">
+              <stop offset="0%" stop-color="#6C63FF"/>
+              <stop offset="100%" stop-color="#00D4AA"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <span class="loading-text">VenueIQ</span>
+    </div>
+    <div class="loading-bar-container" aria-hidden="true">
+      <div class="loading-bar" id="loading-bar"></div>
+    </div>
+    <p class="loading-status" id="loading-status">Initializing platform...</p>
+  </div>
+
+  <!-- Notification Toasts Container -->
+  <div id="toast-container" class="toast-container" role="region" aria-label="Notifications" aria-live="polite"></div>
+
+  <!-- App Shell -->
+  <div class="app-shell" id="app-shell">
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
+      <div class="sidebar-header">
+        <div class="brand" role="banner">
+          <div class="brand-icon" aria-hidden="true">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" width="32" height="32">
+              <path d="M24 4L44 14V34L24 44L4 34V14L24 4Z" stroke="url(#navGrad1)" stroke-width="2" fill="none"/>
+              <path d="M24 12L36 18V30L24 36L12 30V18L24 12Z" fill="url(#navGrad2)" opacity="0.3"/>
+              <circle cx="24" cy="24" r="5" fill="url(#navGrad1)"/>
+              <defs>
+                <linearGradient id="navGrad1" x1="4" y1="4" x2="44" y2="44">
+                  <stop offset="0%" stop-color="#6C63FF"/><stop offset="100%" stop-color="#00D4AA"/>
+                </linearGradient>
+                <linearGradient id="navGrad2" x1="4" y1="4" x2="44" y2="44">
+                  <stop offset="0%" stop-color="#6C63FF"/><stop offset="100%" stop-color="#00D4AA"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <span class="brand-name">VenueIQ</span>
+            <span class="brand-tagline">Smart Event Platform</span>
+          </div>
+        </div>
+        <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle navigation menu" aria-expanded="true" aria-controls="sidebar">
+          <span class="toggle-icon" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </span>
+        </button>
+      </div>
+
+      <!-- Live Status Badge -->
+      <div class="live-badge" role="status" aria-label="System live status">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span class="live-text">LIVE — Match Day Active</span>
+      </div>
+
+      <!-- Navigation Links -->
+      <ul class="nav-list" role="list">
+        <li class="nav-item" role="listitem">
+          <button class="nav-btn active" data-view="dashboard" aria-current="page" aria-label="Dashboard — Overview of all systems">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            </span>
+            <span class="nav-label">Dashboard</span>
+            <span class="nav-badge" aria-label="3 alerts">3</span>
+          </button>
+        </li>
+        <li class="nav-item" role="listitem">
+          <button class="nav-btn" data-view="crowd" aria-label="Crowd Flow — Real-time crowd movement analysis">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </span>
+            <span class="nav-label">Crowd Flow</span>
+            <span class="nav-alert" aria-label="Critical alert" role="img">⚠</span>
+          </button>
+        </li>
+        <li class="nav-item" role="listitem">
+          <button class="nav-btn" data-view="queues" aria-label="Queue Manager — Monitor and optimize wait times">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            </span>
+            <span class="nav-label">Queue Manager</span>
+          </button>
+        </li>
+        <li class="nav-item" role="listitem">
+          <button class="nav-btn" data-view="map" aria-label="Venue Map — Interactive venue navigation">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+            </span>
+            <span class="nav-label">Venue Map</span>
+          </button>
+        </li>
+        <li class="nav-item" role="listitem">
+          <button class="nav-btn" data-view="emergency" aria-label="Emergency Control — Manage emergency situations">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </span>
+            <span class="nav-label">Emergency</span>
+          </button>
+        </li>
+        <li class="nav-item" role="listitem">
+          <button class="nav-btn" data-view="analytics" aria-label="Analytics — Performance insights and reporting">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            </span>
+            <span class="nav-label">Analytics</span>
+          </button>
+        </li>
+        <li class="nav-item" role="listitem">
+          <button class="nav-btn" data-view="accessibility" aria-label="Accessibility Services — Support for attendees with disabilities">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="4" r="2"/><path d="M15.09 8.26A5 5 0 0 0 9 14h3v5l2.5-3 2.5 3v-5h3a5 5 0 0 0-4.91-5.74z"/></svg>
+            </span>
+            <span class="nav-label">Accessibility</span>
+          </button>
+        </li>
+        <li class="nav-item" role="listitem">
+          <button class="nav-btn" data-view="notifications" aria-label="Notifications — Send and manage attendee alerts">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            </span>
+            <span class="nav-label">Notifications</span>
+            <span class="nav-badge" aria-label="5 unread">5</span>
+          </button>
+        </li>
+      </ul>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <div class="venue-info" role="complementary" aria-label="Active venue information">
+          <div class="venue-avatar" aria-hidden="true">🏟</div>
+          <div class="venue-details">
+            <span class="venue-name">MetroArena Stadium</span>
+            <span class="venue-capacity">Cap: 85,000</span>
+          </div>
+        </div>
+        <div class="system-version" aria-label="System version 2.4.1">v2.4.1</div>
+      </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+      <!-- Top Header Bar -->
+      <header class="topbar" role="banner">
+        <div class="topbar-left">
+          <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Open navigation menu" aria-expanded="false" aria-controls="sidebar">
+            <span aria-hidden="true">☰</span>
+          </button>
+          <div class="breadcrumb" aria-label="Breadcrumb navigation" role="navigation">
+            <span class="breadcrumb-item" id="breadcrumb-current" aria-current="location">Dashboard</span>
+          </div>
+        </div>
+        <div class="topbar-center">
+          <div class="search-container" role="search">
+            <label for="global-search" class="sr-only">Search venue, gates, sections, or services</label>
+            <input type="search" id="global-search" class="global-search" placeholder="Search gates, sections, services..." autocomplete="off" aria-label="Global search" maxlength="100" />
+            <span class="search-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </span>
+            <div class="search-results" id="search-results" role="listbox" aria-label="Search results" hidden></div>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <!-- Weather Widget -->
+          <div class="weather-widget" aria-label="Current weather: 28°C, Partly Cloudy">
+            <span class="weather-icon" aria-hidden="true">⛅</span>
+            <span class="weather-temp">28°C</span>
+          </div>
+          <!-- Attendance Counter -->
+          <div class="attendance-badge" role="status" aria-live="polite" aria-label="Current attendance">
+            <span class="attendance-icon" aria-hidden="true">👥</span>
+            <span class="attendance-count" id="attendance-display">72,340</span>
+          </div>
+          <!-- Theme Toggle -->
+          <button class="theme-toggle" id="theme-toggle" aria-label="Toggle color theme" aria-pressed="true">
+            <span class="theme-icon" aria-hidden="true" id="theme-icon">🌙</span>
+          </button>
+          <!-- Accessibility Toggle -->
+          <button class="a11y-toggle" id="a11y-toggle" aria-label="Accessibility settings" aria-haspopup="dialog">
+            <span aria-hidden="true">♿</span>
+          </button>
+          <!-- Alerts Button -->
+          <button class="alerts-btn" id="alerts-btn" aria-label="View 3 active alerts" aria-haspopup="true">
+            <span aria-hidden="true">🔔</span>
+            <span class="alert-dot" aria-hidden="true"></span>
+          </button>
+          <!-- Profile -->
+          <button class="profile-btn" id="profile-btn" aria-label="Staff profile: John Smith, Operations Manager">
+            <div class="profile-avatar" aria-hidden="true">JS</div>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main id="main-content" class="main-content" tabindex="-1" role="main">
+
+        <!-- ========== DASHBOARD VIEW ========== -->
+        <section class="view active" id="view-dashboard" aria-labelledby="dashboard-title" data-view="dashboard">
+          <div class="view-header">
+            <div>
+              <h1 id="dashboard-title" class="view-title">Operations Dashboard</h1>
+              <p class="view-subtitle" id="dashboard-subtitle">Real-time overview — <time datetime="2026-04-15" id="current-datetime">Loading...</time></p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-secondary" id="refresh-dashboard" aria-label="Refresh dashboard data">
+                <span aria-hidden="true">↻</span> Refresh
+              </button>
+              <button class="btn btn-primary" id="export-report" aria-label="Export operations report">
+                <span aria-hidden="true">⬇</span> Export Report
+              </button>
+            </div>
+          </div>
+
+          <!-- KPI Stats Grid -->
+          <div class="stats-grid" role="region" aria-label="Key Performance Indicators">
+            <div class="stat-card critical" role="group" aria-labelledby="stat-attendance-label">
+              <div class="stat-icon" aria-hidden="true">👥</div>
+              <div class="stat-content">
+                <span class="stat-label" id="stat-attendance-label">Current Attendance</span>
+                <span class="stat-value" id="stat-attendance" aria-live="polite">72,340</span>
+                <span class="stat-change positive" aria-label="85.1% of capacity">85.1% capacity</span>
+              </div>
+              <div class="stat-sparkline" aria-hidden="true" id="spark-attendance"></div>
+            </div>
+            <div class="stat-card" role="group" aria-labelledby="stat-wait-label">
+              <div class="stat-icon" aria-hidden="true">⏱</div>
+              <div class="stat-content">
+                <span class="stat-label" id="stat-wait-label">Avg Wait Time</span>
+                <span class="stat-value" id="stat-wait" aria-live="polite">4.2 min</span>
+                <span class="stat-change positive" aria-label="18% better than last event">↓ 18% vs last event</span>
+              </div>
+              <div class="stat-sparkline" aria-hidden="true" id="spark-wait"></div>
+            </div>
+            <div class="stat-card warning" role="group" aria-labelledby="stat-incidents-label">
+              <div class="stat-icon" aria-hidden="true">⚡</div>
+              <div class="stat-content">
+                <span class="stat-label" id="stat-incidents-label">Active Incidents</span>
+                <span class="stat-value" id="stat-incidents" aria-live="polite" aria-atomic="true">3</span>
+                <span class="stat-change negative" aria-label="1 critical incident">1 critical</span>
+              </div>
+              <div class="stat-sparkline" aria-hidden="true" id="spark-incidents"></div>
+            </div>
+            <div class="stat-card" role="group" aria-labelledby="stat-satisfaction-label">
+              <div class="stat-icon" aria-hidden="true">⭐</div>
+              <div class="stat-content">
+                <span class="stat-label" id="stat-satisfaction-label">Satisfaction Score</span>
+                <span class="stat-value" id="stat-satisfaction" aria-live="polite">94.7%</span>
+                <span class="stat-change positive" aria-label="2.3% better than last event">↑ 2.3% vs last event</span>
+              </div>
+              <div class="stat-sparkline" aria-hidden="true" id="spark-satisfaction"></div>
+            </div>
+            <div class="stat-card" role="group" aria-labelledby="stat-gates-label">
+              <div class="stat-icon" aria-hidden="true">🚪</div>
+              <div class="stat-content">
+                <span class="stat-label" id="stat-gates-label">Active Gates</span>
+                <span class="stat-value" id="stat-gates" aria-live="polite">18/24</span>
+                <span class="stat-change neutral" aria-label="6 gates closed">6 closed</span>
+              </div>
+              <div class="stat-sparkline" aria-hidden="true" id="spark-gates"></div>
+            </div>
+            <div class="stat-card" role="group" aria-labelledby="stat-revenue-label">
+              <div class="stat-icon" aria-hidden="true">💰</div>
+              <div class="stat-content">
+                <span class="stat-label" id="stat-revenue-label">Concession Revenue</span>
+                <span class="stat-value" id="stat-revenue" aria-live="polite">₹28.4L</span>
+                <span class="stat-change positive" aria-label="12% above target">↑ 12% above target</span>
+              </div>
+              <div class="stat-sparkline" aria-hidden="true" id="spark-revenue"></div>
+            </div>
+          </div>
+
+          <!-- Main Dashboard Grid -->
+          <div class="dashboard-grid">
+            <!-- Crowd Heatmap Preview -->
+            <div class="card crowd-preview" role="region" aria-labelledby="crowd-preview-title">
+              <div class="card-header">
+                <h2 id="crowd-preview-title" class="card-title">Live Crowd Density</h2>
+                <div class="card-actions">
+                  <span class="live-indicator" aria-label="Live data feed">
+                    <span class="live-dot" aria-hidden="true"></span> Live
+                  </span>
+                  <button class="btn btn-ghost btn-sm" data-view="crowd" aria-label="Open full crowd flow view">Full View →</button>
+                </div>
+              </div>
+              <div class="crowd-heatmap-container">
+                <canvas id="crowd-heatmap-mini" class="crowd-heatmap" aria-label="Stadium crowd density heatmap showing current crowd distribution across sections" role="img" width="600" height="300"></canvas>
+                <div class="heatmap-legend" aria-label="Heatmap color legend">
+                  <span class="legend-label">Low</span>
+                  <div class="legend-gradient" aria-hidden="true"></div>
+                  <span class="legend-label">High</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Zone Status -->
+            <div class="card zone-status" role="region" aria-labelledby="zone-status-title">
+              <div class="card-header">
+                <h2 id="zone-status-title" class="card-title">Zone Status</h2>
+                <button class="btn btn-ghost btn-sm" data-view="map" aria-label="Open full venue map">Map View →</button>
+              </div>
+              <div class="zones-list" role="list" id="zones-list" aria-label="Stadium zone status list"></div>
+            </div>
+
+            <!-- Queue Status -->
+            <div class="card queue-preview" role="region" aria-labelledby="queue-preview-title">
+              <div class="card-header">
+                <h2 id="queue-preview-title" class="card-title">Queue Hotspots</h2>
+                <button class="btn btn-ghost btn-sm" data-view="queues" aria-label="Open full queue manager">Manage →</button>
+              </div>
+              <div class="queue-list" role="list" id="queue-list-preview" aria-label="Current queue wait times"></div>
+            </div>
+
+            <!-- Active Alerts -->
+            <div class="card alerts-panel" role="region" aria-labelledby="alerts-title">
+              <div class="card-header">
+                <h2 id="alerts-title" class="card-title">Active Alerts</h2>
+                <span class="badge badge-warning" aria-label="3 active alerts">3 Active</span>
+              </div>
+              <div class="alerts-list" role="list" id="alerts-list" aria-label="Active system alerts" aria-live="polite"></div>
+            </div>
+
+            <!-- Staff Deployment -->
+            <div class="card staff-card" role="region" aria-labelledby="staff-title">
+              <div class="card-header">
+                <h2 id="staff-title" class="card-title">Staff Deployment</h2>
+                <button class="btn btn-ghost btn-sm" aria-label="Manage staff assignments">Manage</button>
+              </div>
+              <div class="staff-grid" id="staff-grid" role="list" aria-label="Staff deployment by area"></div>
+            </div>
+
+            <!-- Weather & Comfort Index -->
+            <div class="card weather-card" role="region" aria-labelledby="weather-title">
+              <div class="card-header">
+                <h2 id="weather-title" class="card-title">Environment Monitor</h2>
+              </div>
+              <div class="weather-details" id="weather-details" aria-label="Venue environmental conditions"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== CROWD FLOW VIEW ========== -->
+        <section class="view" id="view-crowd" aria-labelledby="crowd-title" data-view="crowd" hidden>
+          <div class="view-header">
+            <div>
+              <h1 id="crowd-title" class="view-title">Crowd Flow Analysis</h1>
+              <p class="view-subtitle">AI-powered real-time crowd movement tracking and density prediction</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-secondary" id="toggle-heatmap" aria-pressed="true" aria-label="Toggle heatmap overlay">Heatmap On</button>
+              <button class="btn btn-secondary" id="toggle-flow-arrows" aria-pressed="true" aria-label="Toggle flow direction arrows">Flow Arrows On</button>
+              <button class="btn btn-primary" id="export-crowd-data" aria-label="Export crowd data as CSV">Export Data</button>
+            </div>
+          </div>
+
+          <div class="crowd-flow-layout">
+            <!-- Main Heatmap -->
+            <div class="card heatmap-card" role="region" aria-labelledby="heatmap-title">
+              <div class="card-header">
+                <h2 id="heatmap-title" class="card-title">Stadium Overview — Live Density Map</h2>
+                <div class="card-actions">
+                  <span class="live-indicator" aria-label="Live data updates">
+                    <span class="live-dot" aria-hidden="true"></span> Live Feed
+                  </span>
+                  <label for="heatmap-time" class="sr-only">Select time range</label>
+                  <select id="heatmap-time" class="select-field" aria-label="Select time range for heatmap">
+                    <option value="now">Now</option>
+                    <option value="15m">Last 15 min</option>
+                    <option value="1h">Last 1 hour</option>
+                    <option value="predicted">AI Prediction +30min</option>
+                  </select>
+                </div>
+              </div>
+              <div class="heatmap-wrapper" id="crowd-heatmap-wrapper">
+                <canvas id="crowd-heatmap-main" class="crowd-heatmap-main" aria-label="Full stadium crowd density heatmap with real-time updates" role="img" width="900" height="500"></canvas>
+                <div class="heatmap-overlay" id="heatmap-annotations" aria-label="Zone annotations overlay"></div>
+              </div>
+              <div class="heatmap-controls" role="toolbar" aria-label="Heatmap display controls">
+                <div class="heatmap-legend-full" aria-label="Density legend from 0 to 100 percent">
+                  <span>0%</span>
+                  <div class="legend-gradient-full" aria-hidden="true"></div>
+                  <span>100%</span>
+                  <span class="legend-label-full">Occupancy Density</span>
+                </div>
+                <div class="zoom-controls" role="group" aria-label="Zoom controls">
+                  <button class="zoom-btn" id="zoom-in" aria-label="Zoom in on heatmap">+</button>
+                  <button class="zoom-btn" id="zoom-reset" aria-label="Reset zoom">⊙</button>
+                  <button class="zoom-btn" id="zoom-out" aria-label="Zoom out on heatmap">−</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Crowd Analytics Sidebar -->
+            <div class="crowd-sidebar">
+              <!-- Critical Zones -->
+              <div class="card" role="region" aria-labelledby="critical-zones-title">
+                <h2 id="critical-zones-title" class="card-title">⚠ Critical Zones</h2>
+                <div id="critical-zones-list" role="list" aria-label="List of critical crowd density zones" aria-live="polite"></div>
+              </div>
+
+              <!-- Movement Prediction -->
+              <div class="card" role="region" aria-labelledby="prediction-title">
+                <h2 id="prediction-title" class="card-title">AI Predictions</h2>
+                <div id="prediction-list" aria-label="AI crowd movement predictions for next 30 minutes"></div>
+              </div>
+
+              <!-- Crowd Flow Chart -->
+              <div class="card" role="region" aria-labelledby="flow-chart-title">
+                <h2 id="flow-chart-title" class="card-title">Entry/Exit Rate</h2>
+                <canvas id="flow-chart" aria-label="Bar chart showing entry and exit rates per hour" role="img" width="300" height="180"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== QUEUE MANAGER VIEW ========== -->
+        <section class="view" id="view-queues" aria-labelledby="queues-title" data-view="queues" hidden>
+          <div class="view-header">
+            <div>
+              <h1 id="queues-title" class="view-title">Smart Queue Manager</h1>
+              <p class="view-subtitle">Predictive wait-time optimization across all venue service points</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-secondary" id="optimize-queues" aria-label="Run AI queue optimization algorithm">🤖 AI Optimize</button>
+              <button class="btn btn-primary" id="add-checkpoint" aria-label="Add new queue checkpoint">+ Add Checkpoint</button>
+            </div>
+          </div>
+
+          <!-- Queue Overview Stats -->
+          <div class="queue-stats-row" role="region" aria-label="Queue overview statistics">
+            <div class="qstat-card" role="group" aria-labelledby="qstat-avg">
+              <span class="qstat-icon" aria-hidden="true">⏱</span>
+              <div>
+                <span class="qstat-value" id="avg-wait-display" aria-live="polite">4.2 min</span>
+                <span class="qstat-label" id="qstat-avg">Avg Wait</span>
+              </div>
+            </div>
+            <div class="qstat-card" role="group" aria-labelledby="qstat-points">
+              <span class="qstat-icon" aria-hidden="true">📍</span>
+              <div>
+                <span class="qstat-value" id="active-queues-display" aria-live="polite">34</span>
+                <span class="qstat-label" id="qstat-points">Active Points</span>
+              </div>
+            </div>
+            <div class="qstat-card warning" role="group" aria-labelledby="qstat-over">
+              <span class="qstat-icon" aria-hidden="true">🔴</span>
+              <div>
+                <span class="qstat-value" id="overloaded-display" aria-live="polite" aria-atomic="true">5</span>
+                <span class="qstat-label" id="qstat-over">Overloaded</span>
+              </div>
+            </div>
+            <div class="qstat-card" role="group" aria-labelledby="qstat-served">
+              <span class="qstat-icon" aria-hidden="true">✅</span>
+              <div>
+                <span class="qstat-value" id="served-display" aria-live="polite">18,340</span>
+                <span class="qstat-label" id="qstat-served">Served Today</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Queue Categories Tabs -->
+          <div class="queue-tabs" role="tablist" aria-label="Queue category filter">
+            <button class="queue-tab active" role="tab" aria-selected="true" aria-controls="queue-all" id="tab-all" data-category="all">All Services</button>
+            <button class="queue-tab" role="tab" aria-selected="false" aria-controls="queue-all" id="tab-entry" data-category="entry">Entry Gates</button>
+            <button class="queue-tab" role="tab" aria-selected="false" aria-controls="queue-all" id="tab-food" data-category="food">Food & Beverage</button>
+            <button class="queue-tab" role="tab" aria-selected="false" aria-controls="queue-all" id="tab-restroom" data-category="restroom">Restrooms</button>
+            <button class="queue-tab" role="tab" aria-selected="false" aria-controls="queue-all" id="tab-merch" data-category="merch">Merchandise</button>
+            <button class="queue-tab" role="tab" aria-selected="false" aria-controls="queue-all" id="tab-medical" data-category="medical">Medical</button>
+          </div>
+
+          <!-- Queue Grid -->
+          <div class="queue-grid-container" id="queue-all" role="tabpanel" aria-labelledby="tab-all">
+            <div class="queue-grid" id="queue-grid" aria-label="Service point queue statuses"></div>
+          </div>
+        </section>
+
+        <!-- ========== VENUE MAP VIEW ========== -->
+        <section class="view" id="view-map" aria-labelledby="map-title" data-view="map" hidden>
+          <div class="view-header">
+            <div>
+              <h1 id="map-title" class="view-title">Interactive Venue Map</h1>
+              <p class="view-subtitle">Google Maps powered navigation and real-time venue intelligence</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-secondary" id="find-route" aria-label="Find fastest route to your seat">📍 Find My Seat</button>
+              <button class="btn btn-primary" id="open-directions" aria-label="Get directions to venue">Get Directions</button>
+            </div>
+          </div>
+          <div class="map-layout">
+            <div class="map-container-wrapper" role="region" aria-labelledby="google-map-title">
+              <h2 id="google-map-title" class="sr-only">MetroArena Stadium Google Map</h2>
+              <!-- Google Maps embed -->
+              <div id="google-map" class="google-map-container" aria-label="Interactive Google Map of MetroArena Stadium" role="application" tabindex="0"></div>
+              <div class="map-controls-overlay" role="toolbar" aria-label="Map layer controls">
+                <button class="map-layer-btn active" data-layer="crowd" aria-pressed="true" aria-label="Toggle crowd density overlay">Crowd Density</button>
+                <button class="map-layer-btn" data-layer="queues" aria-pressed="false" aria-label="Toggle queue locations overlay">Queue Points</button>
+                <button class="map-layer-btn" data-layer="facilities" aria-pressed="false" aria-label="Toggle facilities overlay">Facilities</button>
+                <button class="map-layer-btn" data-layer="emergency" aria-pressed="false" aria-label="Toggle emergency exits overlay">Emergency Exits</button>
+                <button class="map-layer-btn" data-layer="accessible" aria-pressed="false" aria-label="Toggle accessible routes overlay">♿ Accessible</button>
+              </div>
+            </div>
+            <div class="map-sidebar" role="complementary" aria-label="Map information panel">
+              <div class="card" role="region" aria-labelledby="map-search-title">
+                <h2 id="map-search-title" class="card-title">Find a Location</h2>
+                <div class="map-search-form" role="search">
+                  <label for="map-search-input" class="sr-only">Search for gates, concessions, restrooms, or first aid</label>
+                  <input type="search" id="map-search-input" class="search-field" placeholder="Gate A, Concession 3..." maxlength="100" aria-label="Search venue locations" />
+                  <button class="btn btn-primary btn-sm" id="map-search-btn" aria-label="Search location on map">Search</button>
+                </div>
+                <div id="map-quick-links" aria-label="Quick access to common locations">
+                  <h3 class="quick-links-title">Quick Access</h3>
+                  <div class="quick-links-grid" id="quick-links-grid"></div>
+                </div>
+              </div>
+              <div class="card" role="region" aria-labelledby="route-info-title">
+                <h2 id="route-info-title" class="card-title">Route Info</h2>
+                <div id="route-info" aria-live="polite" aria-label="Current route information"></div>
+              </div>
+              <div class="card" role="region" aria-labelledby="nearby-title">
+                <h2 id="nearby-title" class="card-title">Nearby Services</h2>
+                <div id="nearby-list" aria-label="Services near selected location"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== EMERGENCY VIEW ========== -->
+        <section class="view" id="view-emergency" aria-labelledby="emergency-title" data-view="emergency" hidden>
+          <div class="view-header emergency-header">
+            <div>
+              <h1 id="emergency-title" class="view-title">Emergency Control Center</h1>
+              <p class="view-subtitle">Real-time incident management and mass communication</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-emergency" id="trigger-evacuation" aria-label="Activate full venue evacuation protocol" aria-describedby="evacuation-warning">
+                🚨 Trigger Evacuation
+              </button>
+              <p id="evacuation-warning" class="sr-only">Warning: This will send evacuation alerts to all 72,340 attendees and notify emergency services.</p>
+            </div>
+          </div>
+
+          <div class="emergency-grid">
+            <!-- Incident Status -->
+            <div class="card emergency-status" role="region" aria-labelledby="incident-status-title">
+              <h2 id="incident-status-title" class="card-title">Active Incidents</h2>
+              <div id="incidents-list" role="list" aria-label="Active incidents list" aria-live="polite"></div>
+              <button class="btn btn-primary mt-3" id="add-incident" aria-label="Report new incident">+ Report Incident</button>
+            </div>
+
+            <!-- Emergency Zones Map -->
+            <div class="card" role="region" aria-labelledby="emergency-map-title">
+              <h2 id="emergency-map-title" class="card-title">Evacuation Route Map</h2>
+              <canvas id="evacuation-map" aria-label="Stadium evacuation route diagram showing all emergency exits" role="img" width="500" height="350"></canvas>
+              <div class="evacuation-legend" role="list" aria-label="Evacuation map legend">
+                <div class="ev-legend-item" role="listitem"><span class="ev-dot green" aria-hidden="true"></span> Safe exit</div>
+                <div class="ev-legend-item" role="listitem"><span class="ev-dot red" aria-hidden="true"></span> Blocked</div>
+                <div class="ev-legend-item" role="listitem"><span class="ev-dot yellow" aria-hidden="true"></span> Caution</div>
+                <div class="ev-legend-item" role="listitem"><span class="ev-dot blue" aria-hidden="true"></span> Assembly point</div>
+              </div>
+            </div>
+
+            <!-- Mass Communication panel -->
+            <div class="card" role="region" aria-labelledby="mass-comms-title">
+              <h2 id="mass-comms-title" class="card-title">Mass Communication</h2>
+              <form id="broadcast-form" aria-label="Send broadcast message to attendees" novalidate>
+                <div class="form-group">
+                  <label for="broadcast-type" class="form-label">Alert Type <span aria-hidden="true">*</span></label>
+                  <select id="broadcast-type" class="select-field" required aria-required="true" aria-describedby="broadcast-type-hint">
+                    <option value="">Select alert type</option>
+                    <option value="info">Information</option>
+                    <option value="warning">Warning</option>
+                    <option value="critical">Critical Alert</option>
+                    <option value="evacuation">Evacuation Order</option>
+                    <option value="medical">Medical Emergency</option>
+                    <option value="fire">Fire Alert</option>
+                  </select>
+                  <span id="broadcast-type-hint" class="form-hint">Choose the severity level for this broadcast</span>
+                </div>
+                <div class="form-group">
+                  <label for="broadcast-zones" class="form-label">Target Zones</label>
+                  <select id="broadcast-zones" class="select-field" multiple aria-label="Select target zones for broadcast" aria-describedby="broadcast-zones-hint">
+                    <option value="all" selected>All Zones</option>
+                    <option value="north">North Stand</option>
+                    <option value="south">South Stand</option>
+                    <option value="east">East Stand</option>
+                    <option value="west">West Stand</option>
+                    <option value="vip">VIP Areas</option>
+                    <option value="concourse">Concourse</option>
+                  </select>
+                  <span id="broadcast-zones-hint" class="form-hint">Hold Ctrl/Cmd to select multiple</span>
+                </div>
+                <div class="form-group">
+                  <label for="broadcast-msg" class="form-label">Message <span aria-hidden="true">*</span></label>
+                  <textarea id="broadcast-msg" class="textarea-field" rows="3" maxlength="500" required aria-required="true" aria-describedby="broadcast-msg-count" placeholder="Enter emergency message..."></textarea>
+                  <span id="broadcast-msg-count" class="form-hint char-count" aria-live="polite">0/500 characters</span>
+                </div>
+                <div class="form-group">
+                  <fieldset>
+                    <legend class="form-label">Send Via</legend>
+                    <div class="checkbox-group">
+                      <label class="checkbox-label"><input type="checkbox" id="send-app" name="channels" value="app" checked aria-label="Send via VenueIQ app notification" /> App Notification</label>
+                      <label class="checkbox-label"><input type="checkbox" id="send-sms" name="channels" value="sms" aria-label="Send via SMS" /> SMS</label>
+                      <label class="checkbox-label"><input type="checkbox" id="send-screen" name="channels" value="screen" checked aria-label="Send via stadium screens" /> Stadium Screens</label>
+                      <label class="checkbox-label"><input type="checkbox" id="send-pa" name="channels" value="pa" aria-label="Send via public address system" /> PA System</label>
+                    </div>
+                  </fieldset>
+                </div>
+                <div class="form-actions">
+                  <button type="button" class="btn btn-secondary" id="preview-broadcast" aria-label="Preview broadcast before sending">Preview</button>
+                  <button type="submit" class="btn btn-emergency" aria-label="Send broadcast to selected zones">Send Broadcast</button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Emergency Services Contact -->
+            <div class="card" role="region" aria-labelledby="emergency-contacts-title">
+              <h2 id="emergency-contacts-title" class="card-title">Emergency Contacts</h2>
+              <div class="emergency-contacts" id="emergency-contacts" role="list" aria-label="Emergency contact directory"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== ANALYTICS VIEW ========== -->
+        <section class="view" id="view-analytics" aria-labelledby="analytics-title" data-view="analytics" hidden>
+          <div class="view-header">
+            <div>
+              <h1 id="analytics-title" class="view-title">Analytics & Insights</h1>
+              <p class="view-subtitle">Google Analytics powered performance reporting and AI-driven insights</p>
+            </div>
+            <div class="view-actions">
+              <label for="analytics-date-range" class="sr-only">Select date range</label>
+              <select id="analytics-date-range" class="select-field" aria-label="Select analytics date range">
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+                <option value="season">This Season</option>
+              </select>
+              <button class="btn btn-primary" id="download-analytics" aria-label="Download analytics report">Download Report</button>
+            </div>
+          </div>
+          <div class="analytics-grid">
+            <div class="card analytics-main" role="region" aria-labelledby="attendance-trend-title">
+              <h2 id="attendance-trend-title" class="card-title">Attendance Trend</h2>
+              <canvas id="attendance-chart" aria-label="Line chart showing attendance trends over time" role="img" width="600" height="250"></canvas>
+            </div>
+            <div class="card" role="region" aria-labelledby="wait-trend-title">
+              <h2 id="wait-trend-title" class="card-title">Wait Time Distribution</h2>
+              <canvas id="wait-chart" aria-label="Bar chart showing wait time distribution across service points" role="img" width="300" height="200"></canvas>
+            </div>
+            <div class="card" role="region" aria-labelledby="revenue-breakdown-title">
+              <h2 id="revenue-breakdown-title" class="card-title">Revenue Breakdown</h2>
+              <canvas id="revenue-chart" aria-label="Pie chart showing revenue breakdown by category" role="img" width="300" height="200"></canvas>
+            </div>
+            <div class="card analytics-insights" role="region" aria-labelledby="ai-insights-title">
+              <h2 id="ai-insights-title" class="card-title">🤖 AI Insights</h2>
+              <div id="ai-insights-list" role="list" aria-label="AI-generated operational insights" aria-live="polite"></div>
+            </div>
+            <div class="card" role="region" aria-labelledby="google-analytics-title">
+              <h2 id="google-analytics-title" class="card-title">Google Analytics Integration</h2>
+              <div id="ga-metrics" aria-label="Google Analytics metrics panel"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== ACCESSIBILITY VIEW ========== -->
+        <section class="view" id="view-accessibility" aria-labelledby="a11y-main-title" data-view="accessibility" hidden>
+          <div class="view-header">
+            <div>
+              <h1 id="a11y-main-title" class="view-title">Accessibility Services</h1>
+              <p class="view-subtitle">Comprehensive support platform for all attendees</p>
+            </div>
+          </div>
+          <div class="a11y-grid">
+            <div class="card" role="region" aria-labelledby="a11y-services-title">
+              <h2 id="a11y-services-title" class="card-title">Accessibility Services</h2>
+              <div id="a11y-services" role="list" aria-label="Available accessibility services"></div>
+            </div>
+            <div class="card" role="region" aria-labelledby="a11y-requests-title">
+              <h2 id="a11y-requests-title" class="card-title">Active Service Requests</h2>
+              <div id="a11y-requests" role="list" aria-label="Active accessibility service requests" aria-live="polite"></div>
+            </div>
+            <div class="card" role="region" aria-labelledby="a11y-stats-title">
+              <h2 id="a11y-stats-title" class="card-title">Service Statistics</h2>
+              <canvas id="a11y-chart" aria-label="Bar chart showing accessibility service usage statistics" role="img" width="400" height="200"></canvas>
+            </div>
+            <div class="card" role="region" aria-labelledby="a11y-settings-title">
+              <h2 id="a11y-settings-title" class="card-title">Display Preferences</h2>
+              <p class="card-description">Customize your viewing experience for this session</p>
+              <div class="a11y-settings" id="a11y-settings" role="group" aria-labelledby="a11y-settings-title"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== NOTIFICATIONS VIEW ========== -->
+        <section class="view" id="view-notifications" aria-labelledby="notif-main-title" data-view="notifications" hidden>
+          <div class="view-header">
+            <div>
+              <h1 id="notif-main-title" class="view-title">Notification Center</h1>
+              <p class="view-subtitle">Broadcast messages, push notifications, and attendee communication</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-secondary" id="mark-all-read" aria-label="Mark all notifications as read">Mark All Read</button>
+              <button class="btn btn-primary" id="compose-notification" aria-label="Compose new notification">+ Compose</button>
+            </div>
+          </div>
+          <div class="notifications-layout">
+            <div class="card notifications-panel" role="region" aria-labelledby="notif-inbox-title">
+              <h2 id="notif-inbox-title" class="card-title">Recent Notifications</h2>
+              <div id="notifications-list" role="list" aria-label="Notification inbox" aria-live="polite"></div>
+            </div>
+            <div class="card" role="region" aria-labelledby="notif-compose-title">
+              <h2 id="notif-compose-title" class="card-title">Quick Broadcast</h2>
+              <form id="quick-broadcast-form" novalidate aria-label="Quick broadcast form">
+                <div class="form-group">
+                  <label for="quick-msg" class="form-label">Message</label>
+                  <textarea id="quick-msg" class="textarea-field" rows="3" maxlength="280" placeholder="Type your message..." aria-describedby="quick-msg-count"></textarea>
+                  <span id="quick-msg-count" class="form-hint char-count" aria-live="polite">0/280</span>
+                </div>
+                <div class="form-group">
+                  <label for="quick-channel" class="form-label">Channel</label>
+                  <select id="quick-channel" class="select-field" aria-label="Select broadcast channel">
+                    <option value="app">App Push</option>
+                    <option value="screen">Stadium Screens</option>
+                    <option value="all">All Channels</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn btn-primary" aria-label="Send quick broadcast">Send Now</button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+      <!-- Footer -->
+      <footer class="app-footer" role="contentinfo">
+        <div class="footer-left">
+          <span>VenueIQ v2.4.1 — MetroArena Stadium</span>
+          <span class="footer-sep" aria-hidden="true">•</span>
+          <span id="system-status-text" aria-label="System status">All systems operational</span>
+        </div>
+        <div class="footer-right">
+          <span>Powered by Google Cloud & Google Maps</span>
+          <span class="footer-sep" aria-hidden="true">•</span>
+          <span id="last-updated" aria-live="polite" aria-label="Last data update time">Updated just now</span>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Accessibility Settings Modal -->
+  <div class="modal-overlay" id="a11y-modal-overlay" role="presentation" hidden>
+    <div class="modal" id="a11y-modal" role="dialog" aria-modal="true" aria-labelledby="a11y-modal-title" tabindex="-1">
+      <div class="modal-header">
+        <h2 id="a11y-modal-title">♿ Accessibility Settings</h2>
+        <button class="modal-close" id="a11y-modal-close" aria-label="Close accessibility settings dialog">✕</button>
+      </div>
+      <div class="modal-content" id="a11y-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Add Incident Modal -->
+  <div class="modal-overlay" id="incident-modal-overlay" role="presentation" hidden>
+    <div class="modal" id="incident-modal" role="dialog" aria-modal="true" aria-labelledby="incident-modal-title" tabindex="-1">
+      <div class="modal-header">
+        <h2 id="incident-modal-title">Report Incident</h2>
+        <button class="modal-close" id="incident-modal-close" aria-label="Close incident reporting dialog">✕</button>
+      </div>
+      <div class="modal-content">
+        <form id="incident-form" novalidate aria-label="New incident report form">
+          <div class="form-group">
+            <label for="incident-type" class="form-label">Type <span aria-hidden="true">*</span></label>
+            <select id="incident-type" class="select-field" required aria-required="true">
+              <option value="">Select type</option>
+              <option value="medical">Medical Emergency</option>
+              <option value="security">Security Issue</option>
+              <option value="crowd">Crowd Control</option>
+              <option value="infrastructure">Infrastructure</option>
+              <option value="fire">Fire</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="incident-location" class="form-label">Location <span aria-hidden="true">*</span></label>
+            <input type="text" id="incident-location" class="input-field" required aria-required="true" maxlength="100" placeholder="e.g. Gate B, North Stand Section 12" />
+          </div>
+          <div class="form-group">
+            <label for="incident-severity" class="form-label">Severity</label>
+            <select id="incident-severity" class="select-field" aria-label="Select incident severity">
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="incident-desc" class="form-label">Description</label>
+            <textarea id="incident-desc" class="textarea-field" rows="3" maxlength="500" placeholder="Describe the incident..."></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" id="cancel-incident" aria-label="Cancel incident report">Cancel</button>
+            <button type="submit" class="btn btn-emergency" aria-label="Submit incident report">Submit Report</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Service Worker Registration Script -->
+  <script nonce="viq2026">
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js', { scope: './' })
+        .then(reg => console.info('[SW] Registered:', reg.scope))
+        .catch(err => console.warn('[SW] Registration failed:', err));
+    }
+  </script>
+
+  <!-- Google Analytics (GA4) -->
+  <script nonce="viq2026" async src="https://www.googletagmanager.com/gtag/js?id=G-VENUEIQ2026"></script>
+  <script nonce="viq2026">
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-VENUEIQ2026', {
+      page_title: 'VenueIQ Dashboard',
+      send_page_view: true,
+      anonymize_ip: true
+    });
+  </script>
+
+  <!-- Google Maps API -->
+  <script nonce="viq2026">
+    window.VENUEIQ_CONFIG = Object.freeze({
+      MAPS_API_KEY: 'AIzaSyD_PLACEHOLDER_KEY',
+      VENUE_LAT: 12.9716,
+      VENUE_LNG: 77.5946,
+      VENUE_NAME: 'MetroArena Stadium',
+      MAX_CAPACITY: 85000,
+      UPDATE_INTERVAL_MS: 5000,
+      VERSION: '2.4.1'
+    });
+  </script>
+
+  <!-- Core Application Scripts -->
+  <script nonce="viq2026" src="./js/utils.js" defer></script>
+  <script nonce="viq2026" src="./js/security.js" defer></script>
+  <script nonce="viq2026" src="./js/data-store.js" defer></script>
+  <script nonce="viq2026" src="./js/charts.js" defer></script>
+  <script nonce="viq2026" src="./js/crowd-flow.js" defer></script>
+  <script nonce="viq2026" src="./js/queue-manager.js" defer></script>
+  <script nonce="viq2026" src="./js/maps.js" defer></script>
+  <script nonce="viq2026" src="./js/emergency.js" defer></script>
+  <script nonce="viq2026" src="./js/analytics.js" defer></script>
+  <script nonce="viq2026" src="./js/notifications.js" defer></script>
+  <script nonce="viq2026" src="./js/accessibility.js" defer></script>
+  <script nonce="viq2026" src="./js/app.js" defer></script>
+</body>
+</html>

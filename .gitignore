@@ -1,0 +1,41 @@
+# VenueIQ — .gitignore
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+*.kk
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node (if added later)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+
+# Build / dist (if added later)
+dist/
+build/
+.cache/
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+
+# Logs
+logs/
+*.log
+
+# Coverage / Test output
+coverage/
+.nyc_output/
