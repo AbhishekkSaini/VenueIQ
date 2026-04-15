@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en" dir="ltr" translate="no">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -10,13 +10,29 @@
   <meta name="description" content="VenueIQ transforms large-scale sporting venues with AI-powered crowd flow, real-time queue management, smart navigation, and emergency coordination for a seamless attendee experience." />
   <meta name="keywords" content="sporting venue, crowd management, event technology, queue management, real-time coordination, stadium experience" />
   <meta name="author" content="VenueIQ Technologies" />
+  <meta name="application-name" content="VenueIQ" />
   <meta name="robots" content="index, follow" />
+  <meta name="rating" content="general" />
+  <link rel="canonical" href="https://venueiq.app/" />
 
-  <!-- Open Graph -->
+  <!-- Open Graph / Facebook -->
   <meta property="og:title" content="VenueIQ — Smart Physical Event Platform" />
   <meta property="og:description" content="AI-powered crowd flow, real-time queue management, and seamless event coordination for large-scale sporting venues." />
   <meta property="og:type" content="website" />
-  <meta property="og:image" content="./assets/og-image.png" />
+  <meta property="og:url" content="https://venueiq.app/" />
+  <meta property="og:image" content="https://venueiq.app/assets/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="VenueIQ smart event platform dashboard" />
+  <meta property="og:locale" content="en_IN" />
+  <meta property="og:site_name" content="VenueIQ" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="VenueIQ — Smart Physical Event Platform" />
+  <meta name="twitter:description" content="AI-powered crowd flow, real-time queue management, and seamless event coordination for large-scale sporting venues." />
+  <meta name="twitter:image" content="https://venueiq.app/assets/og-image.png" />
+  <meta name="twitter:image:alt" content="VenueIQ smart event platform dashboard" />
 
   <!-- Security: Content Security Policy -->
   <meta http-equiv="Content-Security-Policy"
@@ -35,14 +51,31 @@
 
   <!-- PWA -->
   <link rel="manifest" href="./manifest.json" />
-  <meta name="theme-color" content="#0a0e1a" />
+  <meta name="theme-color" content="#0a0e1a" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#6C63FF" media="(prefers-color-scheme: light)" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="VenueIQ" />
+  <link rel="apple-touch-icon" href="./assets/icon-192.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="./assets/icon-128.png" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icon-96.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./assets/icon-72.png" />
+  <link rel="shortcut icon" href="./assets/icon-96.png" />
 
   <!-- Preconnect for performance -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://maps.googleapis.com" />
+  <!-- Preload critical font for performance -->
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff2" />
+  <!-- Preload critical scripts -->
+  <link rel="preload" as="script" href="./js/utils.js" />
+  <link rel="preload" as="script" href="./js/security.js" />
+  <!-- Preload critical stylesheets -->
+  <link rel="preload" as="style" href="./css/design-tokens.css" />
+  <link rel="preload" as="style" href="./css/main.css" />
 
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -53,6 +86,35 @@
   <link rel="stylesheet" href="./css/components.css" />
   <link rel="stylesheet" href="./css/animations.css" />
   <link rel="stylesheet" href="./css/accessibility.css" />
+
+  <!-- JSON-LD Structured Data -->
+  <script type="application/ld+json" nonce="viq2026">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "VenueIQ",
+    "description": "AI-powered crowd flow, real-time queue management, and seamless event coordination for large-scale sporting venues.",
+    "url": "https://venueiq.app/",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "INR"
+    },
+    "author": {
+      "@type": "Organization",
+      "name": "VenueIQ Technologies"
+    },
+    "featureList": [
+      "Real-time crowd flow analysis",
+      "AI-powered queue management",
+      "Emergency coordination",
+      "Interactive venue maps",
+      "Accessibility services"
+    ]
+  }
+  </script>
 
   <!-- Skip Navigation for Accessibility -->
   <a class="skip-link" href="#main-content">Skip to main content</a>
@@ -260,7 +322,7 @@
             <span aria-hidden="true">♿</span>
           </button>
           <!-- Alerts Button -->
-          <button class="alerts-btn" id="alerts-btn" aria-label="View 3 active alerts" aria-haspopup="true">
+          <button class="alerts-btn" id="alerts-btn" aria-label="View 3 active alerts" aria-haspopup="listbox" aria-expanded="false">
             <span aria-hidden="true">🔔</span>
             <span class="alert-dot" aria-hidden="true"></span>
           </button>
@@ -279,7 +341,7 @@
           <div class="view-header">
             <div>
               <h1 id="dashboard-title" class="view-title">Operations Dashboard</h1>
-              <p class="view-subtitle" id="dashboard-subtitle">Real-time overview — <time datetime="2026-04-15" id="current-datetime">Loading...</time></p>
+              <p class="view-subtitle" id="dashboard-subtitle">Real-time overview — <time id="current-datetime" datetime="2026-04-15">Loading...</time></p>
             </div>
             <div class="view-actions">
               <button class="btn btn-secondary" id="refresh-dashboard" aria-label="Refresh dashboard data">
@@ -885,14 +947,7 @@
     </div>
   </div>
 
-  <!-- Service Worker Registration Script -->
-  <script nonce="viq2026">
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js', { scope: './' })
-        .then(reg => console.info('[SW] Registered:', reg.scope))
-        .catch(err => console.warn('[SW] Registration failed:', err));
-    }
-  </script>
+  <!-- Service Worker is registered by app.js after load for best performance -->
 
   <!-- Google Analytics (GA4) -->
   <script nonce="viq2026" async src="https://www.googletagmanager.com/gtag/js?id=G-VENUEIQ2026"></script>
@@ -907,7 +962,7 @@
     });
   </script>
 
-  <!-- Google Maps API -->
+  <!-- Google Maps API (loaded async, callback triggers on demand) -->
   <script nonce="viq2026">
     window.VENUEIQ_CONFIG = Object.freeze({
       MAPS_API_KEY: 'AIzaSyD_PLACEHOLDER_KEY',
@@ -920,7 +975,7 @@
     });
   </script>
 
-  <!-- Core Application Scripts -->
+  <!-- Core Application Scripts (defer = non-blocking, ordered) -->
   <script nonce="viq2026" src="./js/utils.js" defer></script>
   <script nonce="viq2026" src="./js/security.js" defer></script>
   <script nonce="viq2026" src="./js/data-store.js" defer></script>

@@ -209,7 +209,7 @@
 .ripple {
   position: absolute;
   border-radius: var(--radius-full);
-  background: hsla(255,255%,255%,0.25);
+  background: rgba(255, 255, 255, 0.25);
   transform: scale(0);
   animation: ripple-anim var(--dur-slow) linear;
   pointer-events: none;

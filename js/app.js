@@ -98,6 +98,11 @@
     // Update state
     DataStore.set('app.currentView', sanitized);
 
+    // Update URL hash for bookmarkability and back/forward support
+    if (window.location.hash.replace('#', '') !== sanitized) {
+      window.history.pushState(null, '', `#${sanitized}`);
+    }
+
     // Focus main content for keyboard/screen reader users
     const main = $('#main-content');
     if (main) { main.focus(); }
@@ -351,10 +356,14 @@
 
   const startClock = () => {
     const update = () => {
-      const el = $('#dashboard-subtitle');
       const dt = $('#current-datetime');
       const lastUpdated = $('#last-updated');
-      if (dt) dt.textContent = formatFullDateTime();
+      const now = new Date();
+      if (dt) {
+        dt.textContent = formatFullDateTime(now);
+        // Keep machine-readable datetime in sync
+        dt.setAttribute('datetime', now.toISOString().slice(0, 10));
+      }
       if (lastUpdated) lastUpdated.textContent = 'Updated just now';
     };
     update();
@@ -818,8 +827,10 @@
       // Mark initialized
       DataStore.set('app.initialized', true);
 
-      // Navigate to default view
-      navigateTo('dashboard');
+      // Navigate to default view or URL hash
+      const initialHash = window.location.hash.replace('#', '');
+      const validViews = ['dashboard','crowd','queues','map','emergency','analytics','accessibility','notifications'];
+      navigateTo(validViews.includes(initialHash) ? initialHash : 'dashboard');
 
       // Show welcome toast
       setTimeout(() => {
@@ -847,11 +858,130 @@
   window.VenueIQ.announceToScreenReader = announceToScreenReader;
   window.VenueIQ.navigateTo = navigateTo;
 
+  // PWA: handle install prompt
+  let _deferredInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    _deferredInstallPrompt = e;
+    console.info('[VenueIQ] PWA install prompt available.');
+  });
+  window.addEventListener('appinstalled', () => {
+    _deferredInstallPrompt = null;
+    console.info('[VenueIQ] PWA installed successfully.');
+    typeof gtag !== 'undefined' && gtag('event', 'pwa_installed');
+  });
+
+  // Global unhandled rejection safety net
+  window.addEventListener('unhandledrejection', (e) => {
+    console.warn('[VenueIQ] Unhandled promise rejection:', e.reason);
+    e.preventDefault();
+  });
+
+  // Hash-based routing: restore view from URL hash on load
+  window.addEventListener('hashchange', () => {
+    const hash = window.location.hash.replace('#', '');
+    const validViews = ['dashboard','crowd','queues','map','emergency','analytics','accessibility','notifications'];
+    if (hash && validViews.includes(hash)) navigateTo(hash);
+  });
+
+  // Expose install prompt trigger globally
+  window.VenueIQ.promptInstall = async () => {
+    if (!_deferredInstallPrompt) return;
+    _deferredInstallPrompt.prompt();
+    const { outcome } = await _deferredInstallPrompt.userChoice;
+    _deferredInstallPrompt = null;
+    typeof gtag !== 'undefined' && gtag('event', 'pwa_install_prompt', { outcome });
+  };
+
   // Start when DOM ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', bootstrap);
   } else {
     bootstrap();
   }
+
+  /* ================================================================== */
+  /*  Service Worker Registration                                         */
+  /* ================================================================== */
+  const registerServiceWorker = async () => {
+    if (!('serviceWorker' in navigator)) return;
+    try {
+      const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+      console.info('[VenueIQ] Service Worker registered:', reg.scope);
+
+      // Detect when a new SW version is waiting
+      const checkForUpdate = (registration) => {
+        if (registration.waiting) {
+          // New SW is waiting — notify user
+          showToast({
+            title: '🔄 Update Available',
+            message: 'A new version of VenueIQ is ready. Refreshing…',
+            type: 'info',
+            duration: 4000,
+          });
+          // Tell the waiting SW to activate immediately
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+      };
+
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        if (!newWorker) return;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            checkForUpdate(reg);
+          }
+        });
+      });
+
+      // When the SW controlling this page changes, reload to apply update
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        window.location.reload();
+      });
+
+      // Listen for messages from the SW
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (!event.data) return;
+        switch (event.data.type) {
+          case 'DATA_REFRESH_AVAILABLE':
+            console.info('[VenueIQ] SW: background data refresh available.');
+            break;
+          case 'SYNC_COMPLETE':
+            console.info('[VenueIQ] SW: background sync complete.');
+            break;
+          case 'NOTIFICATION_CLICK':
+            if (event.data.url) navigateTo(event.data.url.replace(/.*#/, '') || 'dashboard');
+            break;
+          default:
+            break;
+        }
+      });
+
+      // Register periodic background sync if supported
+      if ('periodicSync' in reg) {
+        try {
+          await reg.periodicSync.register('venueiq-data-refresh', { minInterval: 60 * 60 * 1000 });
+          console.info('[VenueIQ] Periodic background sync registered.');
+        } catch { /* Permission not granted or not supported */ }
+      }
+
+      // Register background sync for offline actions
+      if ('sync' in reg) {
+        window.VenueIQ.requestBackgroundSync = async () => {
+          try { await reg.sync.register('venueiq-background-sync'); }
+          catch { /* offline — will sync when online */ }
+        };
+      }
+
+      // Track installation
+      typeof gtag !== 'undefined' && gtag('event', 'sw_registered', { scope: reg.scope });
+
+    } catch (err) {
+      console.warn('[VenueIQ] Service Worker registration failed:', err);
+    }
+  };
+
+  // Register SW after page load to not block initial paint
+  window.addEventListener('load', registerServiceWorker);
 
 })();

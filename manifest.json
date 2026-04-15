@@ -1,10 +1,12 @@
 {
+  "id": "./index.html",
   "name": "VenueIQ — Smart Event Platform",
   "short_name": "VenueIQ",
   "description": "AI-powered crowd flow, real-time queue management, and seamless event coordination for large-scale sporting venues.",
-  "start_url": "./index.html",
+  "start_url": "./index.html?utm_source=pwa",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "any",
   "background_color": "#0a0e1a",
   "theme_color": "#6C63FF",
@@ -35,13 +37,25 @@
       "src": "./assets/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable"
+    },
+    {
+      "src": "./assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "./assets/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable"
+    },
+    {
+      "src": "./assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "screenshots": [
@@ -49,13 +63,22 @@
       "src": "./assets/screenshot-dashboard.png",
       "sizes": "1280x720",
       "type": "image/png",
+      "form_factor": "wide",
       "label": "VenueIQ Operations Dashboard"
     },
     {
       "src": "./assets/screenshot-crowd.png",
       "sizes": "1280x720",
       "type": "image/png",
+      "form_factor": "wide",
       "label": "Real-time Crowd Flow Analysis"
+    },
+    {
+      "src": "./assets/screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "VenueIQ Mobile Dashboard"
     }
   ],
   "shortcuts": [
@@ -63,24 +86,35 @@
       "name": "Dashboard",
       "short_name": "Dashboard",
       "description": "View operations overview",
-      "url": "./index.html#dashboard",
+      "url": "./index.html?utm_source=pwa#dashboard",
       "icons": [{ "src": "./assets/icon-96.png", "sizes": "96x96" }]
     },
     {
       "name": "Emergency",
       "short_name": "Emergency",
       "description": "Access emergency controls",
-      "url": "./index.html#emergency",
+      "url": "./index.html?utm_source=pwa#emergency",
       "icons": [{ "src": "./assets/icon-96.png", "sizes": "96x96" }]
     },
     {
       "name": "Queue Manager",
       "short_name": "Queues",
       "description": "Monitor queue wait times",
-      "url": "./index.html#queues",
+      "url": "./index.html?utm_source=pwa#queues",
+      "icons": [{ "src": "./assets/icon-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Crowd Flow",
+      "short_name": "Crowd",
+      "description": "Analyse live crowd movement",
+      "url": "./index.html?utm_source=pwa#crowd",
       "icons": [{ "src": "./assets/icon-96.png", "sizes": "96x96" }]
     }
   ],
+  "protocol_handlers": [],
   "related_applications": [],
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
 }

@@ -1,0 +1,10 @@
+# VenueIQ Robots Exclusion Protocol
+# https://venueiq.app/robots.txt
+
+User-agent: *
+Allow: /
+Disallow: /assets/
+Disallow: /tests/
+
+# Sitemap
+Sitemap: https://venueiq.app/sitemap.xml

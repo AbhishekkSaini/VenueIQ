@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
   <title>VenueIQ — Test Runner</title>
   <style>
     :root {
@@ -34,22 +35,45 @@
     .test-row.pass .test-status { color: var(--pass); }
     .test-row.fail .test-status { color: var(--fail); }
     .test-name { flex: 1; color: var(--text); }
-    .test-error { color: var(--fail); font-size: 0.78rem; font-family: monospace; margin-top: 2px; }
+    .test-error { color: var(--fail); font-size: 0.78rem; font-family: monospace; margin-top: 2px; display: block; }
     #loading { color: var(--muted); text-align: center; padding: 60px; }
     .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid rgba(108,99,255,0.3); border-top-color: #6C63FF; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 12px; }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Skip link for test runner accessibility */
+    .skip-link { position: absolute; left: -9999px; }
+    .skip-link:focus { left: 16px; top: 16px; }
+
+    /* Reuse ARIA live regions needed by tests */
+    .sr-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
   </style>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" crossorigin />
 </head>
 <body>
-  <h1>VenueIQ Test Runner</h1>
-  <p class="subtitle">Comprehensive test suite — Security, Utils, DataStore, Accessibility, DOM Safety</p>
-  <div id="loading">
-    <div class="spinner"></div>
-    <div>Loading application and running tests...</div>
-  </div>
-  <div id="test-results"></div>
+
+  <!-- ARIA infrastructure required by accessibility tests -->
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <div id="aria-live-polite"  class="sr-live" aria-live="polite"   aria-atomic="true"></div>
+  <div id="aria-live-assertive" class="sr-live" aria-live="assertive" aria-atomic="true"></div>
+
+  <!-- Minimal nav structure for nav landmark tests -->
+  <nav role="navigation" aria-label="Test runner navigation">
+    <span style="display:none">Test Nav</span>
+  </nav>
+
+  <!-- Main content area required by accessibility tests -->
+  <main id="main-content" role="main" tabindex="-1">
+
+    <h1>VenueIQ Test Runner</h1>
+    <p class="subtitle">Comprehensive test suite — Security, Utils, DataStore, Accessibility, SEO, PWA, DOM Safety</p>
+    <div id="loading">
+      <div class="spinner"></div>
+      <div>Loading application and running tests...</div>
+    </div>
+    <div id="test-results"></div>
+
+  </main>
 
   <!-- Load VenueIQ modules (same order as index.html) -->
   <script>
@@ -67,10 +91,12 @@
   <script src="../tests/tests.js"></script>
   <script>
     // Remove loading state once tests run
-    document.querySelector('#test-results')
-      .addEventListener('DOMNodeInserted', () => {
-        document.getElementById('loading').style.display = 'none';
-      }, { once: true });
+    const observer = new MutationObserver(() => {
+      document.getElementById('loading').style.display = 'none';
+      observer.disconnect();
+    });
+    observer.observe(document.getElementById('test-results'), { childList: true });
+
     // Fallback
     setTimeout(() => {
       document.getElementById('loading').style.display = 'none';

@@ -1,0 +1,142 @@
+# VenueIQ — Apache .htaccess
+# Performance, security, caching, and HTTP/2 push headers.
+
+# Enable mod_rewrite
+Options -MultiViews
+Options -Indexes
+
+# ===================================================================
+# Security Headers
+# ===================================================================
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "DENY"
+  Header set X-XSS-Protection "1; mode=block"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set Permissions-Policy "geolocation=(self), camera=(), microphone=(), payment=()"
+  Header set Cross-Origin-Opener-Policy "same-origin"
+  Header set Cross-Origin-Embedder-Policy "require-corp"
+  Header set Cross-Origin-Resource-Policy "same-site"
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+</IfModule>
+
+# ===================================================================
+# MIME Types
+# ===================================================================
+<IfModule mod_mime.c>
+  AddType application/manifest+json             .json
+  AddType text/javascript                       .js .mjs
+  AddType text/css                              .css
+  AddType image/webp                            .webp
+  AddType image/avif                            .avif
+  AddType font/woff2                            .woff2
+  AddType font/woff                             .woff
+  AddType image/svg+xml                         .svg
+</IfModule>
+
+# ===================================================================
+# Browser Caching
+# ===================================================================
+<IfModule mod_expires.c>
+  ExpiresActive On
+
+  # HTML — short cache (app updates frequently)
+  ExpiresByType text/html                         "access plus 1 hour"
+
+  # CSS / JS — long cache (version-busted via filenames)
+  ExpiresByType text/css                          "access plus 1 year"
+  ExpiresByType text/javascript                   "access plus 1 year"
+  ExpiresByType application/javascript            "access plus 1 year"
+
+  # Images — long cache
+  ExpiresByType image/png                         "access plus 1 year"
+  ExpiresByType image/jpg                         "access plus 1 year"
+  ExpiresByType image/jpeg                        "access plus 1 year"
+  ExpiresByType image/webp                        "access plus 1 year"
+  ExpiresByType image/avif                        "access plus 1 year"
+  ExpiresByType image/svg+xml                     "access plus 1 year"
+  ExpiresByType image/gif                         "access plus 1 year"
+
+  # Fonts — very long cache
+  ExpiresByType font/woff2                        "access plus 2 years"
+  ExpiresByType font/woff                         "access plus 2 years"
+
+  # Manifest and SW — short cache
+  ExpiresByType application/manifest+json         "access plus 1 day"
+  ExpiresByType text/plain                        "access plus 1 day"
+  ExpiresByType application/xml                   "access plus 1 day"
+</IfModule>
+
+# ===================================================================
+# GZip / Brotli Compression
+# ===================================================================
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html
+  AddOutputFilterByType DEFLATE text/plain
+  AddOutputFilterByType DEFLATE text/css
+  AddOutputFilterByType DEFLATE text/javascript
+  AddOutputFilterByType DEFLATE application/javascript
+  AddOutputFilterByType DEFLATE application/json
+  AddOutputFilterByType DEFLATE application/manifest+json
+  AddOutputFilterByType DEFLATE image/svg+xml
+  AddOutputFilterByType DEFLATE font/woff2
+  AddOutputFilterByType DEFLATE font/woff
+</IfModule>
+
+# ===================================================================
+# Cache-Control Headers
+# ===================================================================
+<IfModule mod_headers.c>
+  # HTML — revalidate every time
+  <FilesMatch "\.(html|htm)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+
+  # Service Worker — never cache
+  <FilesMatch "^sw\.js$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+  </FilesMatch>
+
+  # Manifest — daily revalidation
+  <FilesMatch "manifest\.json$">
+    Header set Cache-Control "public, max-age=86400, must-revalidate"
+  </FilesMatch>
+
+  # Static assets — immutable 1 year
+  <FilesMatch "\.(css|js|png|jpg|jpeg|gif|webp|avif|woff2|woff|svg|ico)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
+
+# ===================================================================
+# HTTP/2 Server Push (critical assets)
+# ===================================================================
+<IfModule mod_http2.c>
+  <FilesMatch "index\.html$">
+    Header add Link "</css/design-tokens.css>; rel=preload; as=style"
+    Header add Link "</css/main.css>; rel=preload; as=style"
+    Header add Link "</js/utils.js>; rel=preload; as=script"
+    Header add Link "</js/security.js>; rel=preload; as=script"
+  </FilesMatch>
+</IfModule>
+
+# ===================================================================
+# Directory / File Protection
+# ===================================================================
+# Forbid access to hidden files
+<FilesMatch "^\.">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+# Forbid access to sensitive files
+<FilesMatch "\.(env|log|key|pem|cfg|sql|bak|sh)$">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+# ===================================================================
+# Error Pages
+# ===================================================================
+ErrorDocument 404 /index.html
+ErrorDocument 403 /index.html

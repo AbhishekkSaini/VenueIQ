@@ -1,19 +1,24 @@
 /**
- * VenueIQ Service Worker
- * Provides offline support, asset caching, and background sync.
- * Strategy: Cache-first for assets, Network-first for API data.
+ * VenueIQ — Service Worker
+ * Cache-first offline strategy with navigation preload, background sync,
+ * stale-while-revalidate for remote resources, and push notifications.
+ * @version 2.4.1
  */
 
 'use strict';
 
-const CACHE_NAME     = 'venueiq-v2.4.1';
-const STATIC_CACHE   = 'venueiq-static-v2.4.1';
-const DYNAMIC_CACHE  = 'venueiq-dynamic-v2.4.1';
+const CACHE_NAME     = 'venueiq-v2-4-1';
+const OFFLINE_URL    = './index.html';
+const FONT_CACHE     = 'venueiq-fonts-v1';
+const IMAGES_CACHE   = 'venueiq-images-v1';
 
-/** Assets to pre-cache on install */
-const STATIC_ASSETS = [
-  './',
+/* ------------------------------------------------------------------ */
+/*  Assets to pre-cache on install                                      */
+/* ------------------------------------------------------------------ */
+const PRECACHE_ASSETS = [
   './index.html',
+  './manifest.json',
+  './robots.txt',
   './css/design-tokens.css',
   './css/main.css',
   './css/components.css',
@@ -31,215 +36,294 @@ const STATIC_ASSETS = [
   './js/notifications.js',
   './js/accessibility.js',
   './js/app.js',
-  './manifest.json',
+  './assets/icon-72.png',
+  './assets/icon-96.png',
+  './assets/icon-128.png',
+  './assets/icon-192.png',
+  './assets/icon-512.png',
 ];
 
-/** Maximum entries in dynamic cache */
-const DYNAMIC_CACHE_MAX = 50;
-
 /* ------------------------------------------------------------------ */
-/*  Install                                                             */
+/*  Install — pre-cache core assets                                     */
 /* ------------------------------------------------------------------ */
 self.addEventListener('install', (event) => {
-  console.info('[SW] Installing VenueIQ Service Worker v2.4.1');
+  console.log('[SW] Install — caching core assets');
   event.waitUntil(
-    caches.open(STATIC_CACHE)
-      .then(cache => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(PRECACHE_ASSETS))
       .then(() => self.skipWaiting())
-      .catch(err => console.warn('[SW] Pre-cache failed for some assets:', err))
+      .catch(err => console.warn('[SW] Pre-cache failed (some assets may be missing):', err))
   );
 });
 
 /* ------------------------------------------------------------------ */
-/*  Activate                                                            */
+/*  Activate — clean old caches, enable navigation preload              */
 /* ------------------------------------------------------------------ */
 self.addEventListener('activate', (event) => {
-  console.info('[SW] Activating — clearing old caches');
+  console.log('[SW] Activate — cleaning old caches');
   event.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(
-        keys
-          .filter(key => key !== STATIC_CACHE && key !== DYNAMIC_CACHE)
-          .map(key => {
-            console.info('[SW] Deleting old cache:', key);
-            return caches.delete(key);
-          })
-      ))
-      .then(() => self.clients.claim())
+    Promise.all([
+      // Delete old versioned caches
+      caches.keys().then(keys =>
+        Promise.all(
+          keys
+            .filter(k => k !== CACHE_NAME && k !== FONT_CACHE && k !== IMAGES_CACHE)
+            .map(k => {
+              console.log('[SW] Deleting old cache:', k);
+              return caches.delete(k);
+            })
+        )
+      ),
+      // Enable navigation preload for faster navigations
+      self.registration.navigationPreload?.enable()
+        .then(() => console.log('[SW] Navigation preload enabled.'))
+        .catch(() => {}),
+      // Claim all open clients immediately
+      self.clients.claim(),
+    ])
   );
 });
 
 /* ------------------------------------------------------------------ */
-/*  Fetch Strategy                                                      */
+/*  Fetch — stratified caching                                          */
 /* ------------------------------------------------------------------ */
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET and chrome-extension requests
-  if (request.method !== 'GET' || url.protocol === 'chrome-extension:') return;
+  // Skip non-GET, chrome-extension, and analytics pings
+  if (request.method !== 'GET') return;
+  if (url.protocol === 'chrome-extension:') return;
+  if (url.hostname === 'www.google-analytics.com') return;
 
-  // Skip Google Analytics — don't cache
-  if (url.hostname.includes('google-analytics.com') ||
-      url.hostname.includes('googletagmanager.com')) return;
-
-  // Google Maps API — network only (live data)
-  if (url.hostname.includes('maps.googleapis.com') ||
-      url.hostname.includes('maps.gstatic.com')) {
-    event.respondWith(networkOnly(request));
+  // Google Fonts — stale-while-revalidate with dedicated font cache
+  if (
+    url.hostname === 'fonts.googleapis.com' ||
+    url.hostname === 'fonts.gstatic.com'
+  ) {
+    event.respondWith(staleWhileRevalidate(request, FONT_CACHE, 60 * 60 * 24 * 365));
     return;
   }
 
-  // Google Fonts — cache first (fonts don't change)
-  if (url.hostname.includes('fonts.googleapis.com') ||
-      url.hostname.includes('fonts.gstatic.com')) {
-    event.respondWith(cacheFirst(request, DYNAMIC_CACHE));
+  // Maps API tiles — network first with image cache fallback
+  if (url.hostname.includes('maps.googleapis.com') || url.hostname.includes('maps.gstatic.com')) {
+    event.respondWith(networkFirstWithCache(request, IMAGES_CACHE));
     return;
   }
 
-  // Static assets — cache first
-  if (url.pathname.match(/\.(css|js|png|jpg|jpeg|svg|ico|webp|woff2?)$/)) {
-    event.respondWith(cacheFirst(request, STATIC_CACHE));
+  // Navigation requests — use preload or cache-first with offline fallback
+  if (request.mode === 'navigate') {
+    event.respondWith(handleNavigation(event));
     return;
   }
 
-  // HTML pages — network first with cache fallback
-  if (request.headers.get('Accept')?.includes('text/html')) {
-    event.respondWith(networkFirst(request));
-    return;
-  }
-
-  // Everything else — stale-while-revalidate
-  event.respondWith(staleWhileRevalidate(request));
+  // Everything else — cache-first (core app shell)
+  event.respondWith(cacheFirstWithNetwork(request, CACHE_NAME));
 });
 
 /* ------------------------------------------------------------------ */
-/*  Cache Strategy Implementations                                      */
+/*  Strategy: Navigation with optional preload                          */
 /* ------------------------------------------------------------------ */
-
-/** Cache-first: Serve cached, fallback to network. */
-const cacheFirst = async (request, cacheName = STATIC_CACHE) => {
+async function handleNavigation(event) {
   try {
-    const cached = await caches.match(request);
-    if (cached) return cached;
-    const response = await fetch(request);
-    if (response.ok) await updateCache(cacheName, request, response.clone());
-    return response;
-  } catch {
-    return caches.match('./index.html') || new Response('Offline', { status: 503 });
-  }
-};
+    // Try navigation preload response first (fastest)
+    const preloadResp = await event.preloadResponse;
+    if (preloadResp) return preloadResp;
 
-/** Network-first: Try network, fallback to cache. */
-const networkFirst = async (request) => {
+    // Try network
+    const networkResp = await fetch(event.request);
+    if (networkResp.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(event.request, networkResp.clone());
+      return networkResp;
+    }
+  } catch (_) {
+    // Offline — serve cached index.html
+  }
+
+  const cached = await caches.match(OFFLINE_URL);
+  return cached || new Response('VenueIQ is offline.', {
+    status: 503,
+    headers: { 'Content-Type': 'text/plain' },
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Strategy: Cache-first, fall back to network                         */
+/* ------------------------------------------------------------------ */
+async function cacheFirstWithNetwork(request, cacheName) {
+  const cached = await caches.match(request);
+  if (cached) return cached;
+
   try {
-    const response = await fetch(request);
-    if (response.ok) await updateCache(DYNAMIC_CACHE, request, response.clone());
-    return response;
+    const networkResp = await fetch(request);
+    if (networkResp.ok) {
+      const cache = await caches.open(cacheName);
+      cache.put(request, networkResp.clone());
+    }
+    return networkResp;
   } catch {
-    const cached = await caches.match(request);
-    return cached || caches.match('./index.html') || offlineResponse();
+    return new Response('', { status: 503, statusText: 'Service Unavailable' });
   }
-};
+}
 
-/** Stale-while-revalidate: Serve cache immediately, update in background. */
-const staleWhileRevalidate = async (request) => {
-  const cache  = await caches.open(DYNAMIC_CACHE);
-  const cached = await cache.match(request);
-  const fetchPromise = fetch(request).then(response => {
-    if (response.ok) cache.put(request, response.clone());
-    return response;
-  }).catch(() => null);
-  return cached || await fetchPromise || offlineResponse();
-};
-
-/** Network only — no cache. */
-const networkOnly = async (request) => {
-  try { return await fetch(request); }
-  catch { return new Response('', { status: 503 }); }
-};
-
-/** Add to cache and trim old entries. */
-const updateCache = async (cacheName, request, response) => {
+/* ------------------------------------------------------------------ */
+/*  Strategy: Stale-while-revalidate                                    */
+/* ------------------------------------------------------------------ */
+async function staleWhileRevalidate(request, cacheName, maxAgeSeconds = 86400) {
   const cache = await caches.open(cacheName);
-  await cache.put(request, response);
-  const keys = await cache.keys();
-  if (keys.length > DYNAMIC_CACHE_MAX) {
-    await cache.delete(keys[0]);
-  }
-};
+  const cached = await cache.match(request);
 
-const offlineResponse = () =>
-  new Response(
-    '<html><body style="font-family:sans-serif;text-align:center;padding:60px;background:#0a0e1a;color:#fff;"><h1>VenueIQ</h1><p>You appear to be offline. Please check your connection.</p></body></html>',
-    { status: 503, headers: { 'Content-Type': 'text/html' } }
-  );
+  // Kick off network request in background
+  const networkPromise = fetch(request)
+    .then(resp => {
+      if (resp.ok) {
+        const clone = resp.clone();
+        cache.put(request, clone);
+      }
+      return resp;
+    })
+    .catch(() => null);
+
+  // Return cached immediately if fresh enough, else wait for network
+  if (cached) {
+    const dateHeader = cached.headers.get('date');
+    const age = dateHeader ? (Date.now() - new Date(dateHeader).getTime()) / 1000 : 0;
+    if (age < maxAgeSeconds) return cached;
+  }
+
+  return (await networkPromise) || cached || new Response('', { status: 503 });
+}
 
 /* ------------------------------------------------------------------ */
-/*  Push Notification Handler                                           */
+/*  Strategy: Network-first with cache fallback                         */
+/* ------------------------------------------------------------------ */
+async function networkFirstWithCache(request, cacheName) {
+  try {
+    const resp = await fetch(request);
+    if (resp.ok) {
+      const cache = await caches.open(cacheName);
+      cache.put(request, resp.clone());
+    }
+    return resp;
+  } catch {
+    const cached = await caches.match(request, { cacheName });
+    return cached || new Response('', { status: 503 });
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Push Notifications                                                   */
 /* ------------------------------------------------------------------ */
 self.addEventListener('push', (event) => {
-  const data = event.data?.json() ?? {};
-  const options = {
-    body: data.body || 'New alert from VenueIQ',
-    icon: './assets/icon-192.png',
-    badge: './assets/badge-72.png',
-    tag: 'venueiq-push',
-    requireInteraction: data.requireInteraction || false,
-    data: { url: data.url || './' },
-    actions: [
-      { action: 'view',   title: 'View Details' },
-      { action: 'dismiss',title: 'Dismiss' },
-    ],
-  };
+  let payload = { title: 'VenueIQ Alert', body: 'New update from your venue.', icon: './assets/icon-192.png', badge: './assets/badge-72.png' };
+
+  try {
+    if (event.data) {
+      const data = event.data.json();
+      payload = { ...payload, ...data };
+    }
+  } catch { /* JSON parse failed — use defaults */ }
+
   event.waitUntil(
-    self.registration.showNotification(data.title || 'VenueIQ Alert', options)
+    self.registration.showNotification(payload.title, {
+      body:    payload.body,
+      icon:    payload.icon    || './assets/icon-192.png',
+      badge:   payload.badge   || './assets/badge-72.png',
+      tag:     payload.tag     || 'venueiq-alert',
+      vibrate: [200, 100, 200],
+      requireInteraction: payload.requireInteraction || false,
+      data:    { url: payload.url || './', timestamp: Date.now() },
+      actions: [
+        { action: 'view',    title: '📊 View Dashboard' },
+        { action: 'dismiss', title: '✕ Dismiss' },
+      ],
+    })
   );
 });
 
 /* ------------------------------------------------------------------ */
-/*  Notification Click Handler                                          */
+/*  Notification Click                                                   */
 /* ------------------------------------------------------------------ */
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+
   if (event.action === 'dismiss') return;
 
-  const url = event.notification.data?.url || './';
+  const targetUrl = event.notification.data?.url || './';
+
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then(windowClients => {
-        for (const client of windowClients) {
-          if (client.url === url && 'focus' in client) return client.focus();
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then(clients => {
+        // Focus existing open window if available
+        for (const client of clients) {
+          if (client.url.includes('venueiq') && 'focus' in client) {
+            client.focus();
+            client.postMessage({ type: 'NOTIFICATION_CLICK', url: targetUrl });
+            return;
+          }
         }
-        if (clients.openWindow) return clients.openWindow(url);
+        // Open new window
+        return self.clients.openWindow(targetUrl);
       })
   );
 });
 
 /* ------------------------------------------------------------------ */
-/*  Background Sync                                                     */
+/*  Background Sync — queue offline actions                             */
 /* ------------------------------------------------------------------ */
 self.addEventListener('sync', (event) => {
-  if (event.tag === 'venueiq-sync-reports') {
-    event.waitUntil(syncOfflineReports());
+  if (event.tag === 'venueiq-background-sync') {
+    event.waitUntil(processPendingSync());
   }
 });
 
-const syncOfflineReports = async () => {
-  console.info('[SW] Background sync: uploading offline reports...');
-  // In production: retrieve from IndexedDB and POST to server
-};
+async function processPendingSync() {
+  console.log('[SW] Background sync triggered — processing pending actions.');
+  // In production: flush IndexedDB queue to server
+  const clients = await self.clients.matchAll({ type: 'window' });
+  clients.forEach(client => client.postMessage({ type: 'SYNC_COMPLETE' }));
+}
 
 /* ------------------------------------------------------------------ */
-/*  Message Handler (from main thread)                                  */
+/*  Periodic Background Sync — refresh live data periodically           */
+/* ------------------------------------------------------------------ */
+self.addEventListener('periodicsync', (event) => {
+  if (event.tag === 'venueiq-data-refresh') {
+    event.waitUntil(refreshVenueData());
+  }
+});
+
+async function refreshVenueData() {
+  console.log('[SW] Periodic sync — refreshing cached data.');
+  const clients = await self.clients.matchAll({ type: 'window' });
+  clients.forEach(client => client.postMessage({ type: 'DATA_REFRESH_AVAILABLE' }));
+}
+
+/* ------------------------------------------------------------------ */
+/*  Message Handler — communication with main thread                    */
 /* ------------------------------------------------------------------ */
 self.addEventListener('message', (event) => {
-  if (event.data?.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-  if (event.data?.type === 'CLEAR_CACHE') {
-    caches.delete(DYNAMIC_CACHE).then(() => {
-      event.source?.postMessage({ type: 'CACHE_CLEARED' });
-    });
+  if (!event.data) return;
+
+  switch (event.data.type) {
+    case 'SKIP_WAITING':
+      self.skipWaiting();
+      break;
+
+    case 'GET_VERSION':
+      event.ports?.[0]?.postMessage({ version: CACHE_NAME });
+      break;
+
+    case 'CLEAR_CACHE':
+      caches.keys()
+        .then(keys => Promise.all(keys.map(k => caches.delete(k))))
+        .then(() => event.ports?.[0]?.postMessage({ cleared: true }));
+      break;
+
+    default:
+      break;
   }
 });
+
+console.log(`[SW] VenueIQ Service Worker ${CACHE_NAME} loaded.`);

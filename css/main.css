@@ -618,8 +618,16 @@ input, select, textarea { font-family: inherit; }
 }
 
 /* Views (Panels) */
-.view { display: none; }
-.view.active { display: block; animation: view-enter var(--dur-slow) var(--ease-out); }
+.view {
+  display: none;
+  content-visibility: auto;
+  contain-intrinsic-size: 0 600px;
+}
+.view.active {
+  display: block;
+  content-visibility: visible;
+  animation: view-enter var(--dur-slow) var(--ease-out);
+}
 @keyframes view-enter {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }

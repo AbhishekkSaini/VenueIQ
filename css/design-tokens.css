@@ -178,6 +178,9 @@
   --topbar-height:      64px;
   --footer-height:      40px;
   --content-max-width:  1440px;
+
+  /* --- Color Scheme (native dark mode support) --- */
+  color-scheme: dark;
 }
 
 /* ============================================================
@@ -207,6 +210,8 @@ body.theme-light {
   --shadow-md:  0 4px 16px hsla(0,0%,0%,0.12);
   --shadow-lg:  0 8px 32px hsla(0,0%,0%,0.14);
   --shadow-xl:  0 16px 48px hsla(0,0%,0%,0.16);
+
+  color-scheme: light;
 }
 
 /* ============================================================
